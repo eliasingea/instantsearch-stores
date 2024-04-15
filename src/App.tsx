@@ -12,6 +12,7 @@ import {
   useHits,
   HierarchicalMenu,
   useInstantSearch,
+  useRefinementList,
 } from 'react-instantsearch';
 import { history } from 'instantsearch.js/es/lib/routers';
 
@@ -33,28 +34,38 @@ const indexName = "max_bopis_test"
 
 
 const CreateQuickFilters = () => {
-  let { results } = useInstantSearch();
+  let { results, indexUiState, setIndexUiState } = useInstantSearch();
   let pills = [];
 
-  console.log(results)
+
   let orderedValues = results?.renderingContent?.facetOrdering?.values
   if (!orderedValues) return
 
   for (let [key, value] of Object.entries(orderedValues)) {
     if ("order" in value) {
-      console.log(value.order)
       for (let facet of value.order) {
         pills.push({ key: key, value: facet });
       }
     }
 
   }
-  console.log(pills)
+
   return (
     <div>
       {pills.map((pill) => {
         return (
-          <button key={pill.key}>
+          <button key={pill.key} onClick={
+            () => {
+              let object = { [pill.key]: [pill.value] }
+              setIndexUiState((prevState) => ({
+                ...prevState,
+                refinementList: {
+                  ...prevState.refinementList,
+                  ...object
+                }
+              }));
+            }
+          }>
             {pill.value}
           </button>
         )
@@ -66,7 +77,6 @@ const CreateQuickFilters = () => {
 const routing = {
   router: history({
     parseURL({ qsModule, location }) {
-      console.log(location.pathname);
       let plpSlug = ""
       let collectionHandle = ""
       let context = ""
@@ -101,11 +111,14 @@ const routing = {
       const indexUiState = uiState[indexName];
       return {
         q: indexUiState.query,
+        brand: indexUiState.refinementList?.brand,
+        page: indexUiState.page,
+        categories: indexUiState.refinementList?.categories
 
       }
     },
     routeToState(routeState) {
-      console.log(routeState);
+      ;
       // ...
       return {
         [indexName]: {
@@ -113,7 +126,12 @@ const routing = {
           configure: {
             ruleContexts: routeState.context,
             filters: routeState.filters,
-          }
+          },
+          RefinementList: {
+            brand: routeState.brand,
+            categories: routeState.categories
+          },
+          page: routeState.page
         }
       }
     },
