@@ -10,6 +10,8 @@ import {
   Pagination,
   SearchBox,
   useHits,
+  HierarchicalMenu,
+  useInstantSearch,
 } from 'react-instantsearch';
 import { history } from 'instantsearch.js/es/lib/routers';
 
@@ -30,18 +32,56 @@ const future = { preserveSharedStateOnUnmount: true };
 const indexName = "max_bopis_test"
 
 
+const CreateQuickFilters = () => {
+  let { results } = useInstantSearch();
+  let pills = [];
+
+  console.log(results)
+  let orderedValues = results?.renderingContent?.facetOrdering?.values
+  if (!orderedValues) return
+
+  for (let [key, value] of Object.entries(orderedValues)) {
+    if ("order" in value) {
+      console.log(value.order)
+      for (let facet of value.order) {
+        pills.push({ key: key, value: facet });
+      }
+    }
+
+  }
+  console.log(pills)
+  return (
+    <div>
+      {pills.map((pill) => {
+        return (
+          <button key={pill.key}>
+            {pill.value}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
 
 const routing = {
   router: history({
     parseURL({ qsModule, location }) {
       console.log(location.pathname);
       let plpSlug = ""
+      let collectionHandle = ""
       let context = ""
+      let filters = "";
       if (location?.pathname.includes("plp")) {
         plpSlug = location.pathname.split("/")[2]
       }
+      if (location?.pathname.includes("collection")) {
+        collectionHandle = location.pathname.split("/")[2]
+      }
+
       if (plpSlug) {
         context = plpSlug;
+      } else if (collectionHandle) {
+        filters = `categories:${collectionHandle}`
       }
       const { query = '', page, brands = [] } = qsModule.parse(
         location.search.slice(1)
@@ -50,7 +90,8 @@ const routing = {
       return {
         query: decodeURIComponent(query),
         page,
-        context
+        context,
+        filters
       }
     },
   }),
@@ -71,6 +112,7 @@ const routing = {
           query: routeState.q,
           configure: {
             ruleContexts: routeState.context,
+            filters: routeState.filters,
           }
         }
       }
@@ -98,12 +140,21 @@ export function App() {
           <Configure hitsPerPage={8} />
           <div className="search-panel">
             <div className="search-panel__filters">
-              <DynamicWidgets fallbackComponent={RefinementList}>
+              <DynamicWidgets>
+                <Panel header="Categories">
+                  <RefinementList
+                    attribute='categories'
+                  />
+                </Panel>
+                <Panel header="Brands">
+                  <RefinementList attribute="brand" />
+                </Panel>
               </DynamicWidgets>
             </div>
 
             <div className="search-panel__results">
               <SearchBox placeholder="" className="searchbox" />
+              <CreateQuickFilters />
               <Hits hitComponent={Hit} />
 
               <div className="pagination">
