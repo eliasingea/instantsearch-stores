@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import algoliasearch from 'algoliasearch/lite';
 import {
   Configure,
@@ -13,13 +13,17 @@ import {
   HierarchicalMenu,
   useInstantSearch,
   useRefinementList,
+  Stats,
 } from 'react-instantsearch';
-import { history } from 'instantsearch.js/es/lib/routers';
 
+import { CreateQuickFilters } from './Components/CreateQuickFilters';
+import { RefinementSize } from './Components/RefinementSize';
 
-import { Panel } from './Panel';
+import { Panel } from './Components/Panel';
 
 import type { Hit } from 'instantsearch.js';
+
+import { routing } from './util/Router';
 
 import './App.css';
 
@@ -28,117 +32,72 @@ const searchClient = algoliasearch(
   '21d2cd80869e20eb0becf4065f058b95'
 );
 
+
+function createSearchClientProxy(searchClient, dynamicValue) {
+  let filtersToSend = [];
+
+  for (let value of dynamicValue) {
+    let singleFilter = `storeAggregate:${value}`
+    filtersToSend.push(singleFilter)
+  }
+
+  return {
+    ...searchClient,
+    search(requests) {
+      let request = requests[0]
+      let filters = request.params.filters;
+      if (filters === "") {
+        filters = filtersToSend.join(" OR ")
+      } else {
+        filters = filters + " AND " + filtersToSend.join(" OR ")
+      }
+      request.params.filters = filters;
+      console.log(requests)
+      return searchClient.search(requests);
+    }
+  };
+}
+
 const future = { preserveSharedStateOnUnmount: true };
 
 const indexName = "max_bopis_test"
 
-
-const CreateQuickFilters = () => {
-  let { results, indexUiState, setIndexUiState } = useInstantSearch();
-  let pills = [];
+export function App() {
+  const [sizes, setSizes] = useState([]);
 
 
-  let orderedValues = results?.renderingContent?.facetOrdering?.values
-  if (!orderedValues) return
+  let [store, setStore] = useState(['1795']);
 
-  for (let [key, value] of Object.entries(orderedValues)) {
-    if ("order" in value) {
-      for (let facet of value.order) {
-        pills.push({ key: key, value: facet });
-      }
+  const client = useMemo(() => {
+    return createSearchClientProxy(searchClient, store);
+  }, [store]);
+
+
+  function handleStoreOnClick(event) {
+    event.preventDefault()
+    if (event?.target?.value) {
+      let value = event.target.value;
+      setStore(currentArray => {
+        // Check if the value is already in the array
+        const index = currentArray.indexOf(value);
+        if (index !== -1) {
+          // Value exists, remove it from the array
+          return currentArray.filter(item => item !== value);
+        } else {
+          // Value does not exist, add it to the array
+          return [...currentArray, value];
+        }
+      });
     }
-
   }
 
-  return (
-    <div>
-      {pills.map((pill) => {
-        return (
-          <button key={pill.key} onClick={
-            () => {
-              let object = { [pill.key]: [pill.value] }
-              setIndexUiState((prevState) => ({
-                ...prevState,
-                refinementList: {
-                  ...prevState.refinementList,
-                  ...object
-                }
-              }));
-            }
-          }>
-            {pill.value}
-          </button>
-        )
-      })}
-    </div>
-  )
-}
+  const transformItems = (items) => {
+    return items.map((item) => ({
+      ...item,
+      label: item.label.toUpperCase(),
+    }));
+  };
 
-const routing = {
-  router: history({
-    parseURL({ qsModule, location }) {
-      let plpSlug = ""
-      let collectionHandle = ""
-      let context = ""
-      let filters = "";
-      if (location?.pathname.includes("plp")) {
-        plpSlug = location.pathname.split("/")[2]
-      }
-      if (location?.pathname.includes("collection")) {
-        collectionHandle = location.pathname.split("/")[2]
-      }
-
-      if (plpSlug) {
-        context = plpSlug;
-      } else if (collectionHandle) {
-        filters = `categories:${collectionHandle}`
-      }
-      const { query = '', page, brands = [] } = qsModule.parse(
-        location.search.slice(1)
-      );
-
-      return {
-        query: decodeURIComponent(query),
-        page,
-        context,
-        filters
-      }
-    },
-  }),
-  stateMapping: {
-    stateToRoute(uiState) {
-      // ...
-      const indexUiState = uiState[indexName];
-      return {
-        q: indexUiState.query,
-        brand: indexUiState.refinementList?.brand,
-        page: indexUiState.page,
-        categories: indexUiState.refinementList?.categories
-
-      }
-    },
-    routeToState(routeState) {
-      ;
-      // ...
-      return {
-        [indexName]: {
-          query: routeState.q,
-          configure: {
-            ruleContexts: routeState.context,
-            filters: routeState.filters,
-          },
-          RefinementList: {
-            brand: routeState.brand,
-            categories: routeState.categories
-          },
-          page: routeState.page
-        }
-      }
-    },
-  },
-};
-
-export function App() {
   return (
     <div>
       <header className="header">
@@ -154,20 +113,53 @@ export function App() {
       </header>
 
       <div className="container">
-        <InstantSearch searchClient={searchClient} indexName="max_bopis_test" future={future} insights routing={routing}>
+        <InstantSearch searchClient={client} indexName="max_bopis_test" insights future={future} routing={routing}>
           <Configure hitsPerPage={8} />
           <div className="search-panel">
             <div className="search-panel__filters">
+              <Stats />
+              <Panel header="Current Store">
+                <label>{store}</label>
+              </Panel>
+              <Panel header="Store Locator">
+                <ul className="ais-RefinementList-list">
+
+                  <li className="ais-RefinementList-item">
+                    <label className="ais-RefinementList-label">
+                      <input className="ais-RefinementList-checkbox" type="checkbox" value="1001" onClick={handleStoreOnClick} />
+                      <span className="ais-RefinementList-labelText">1001</span>
+                    </label>
+                  </li>
+                  <li className="ais-RefinementList-item">
+                    <label className="ais-RefinementList-label">
+                      <input className="ais-RefinementList-checkbox" type="checkbox" value="1002" onClick={handleStoreOnClick} />
+                      <span className="ais-RefinementList-labelText">1002</span>
+                    </label>
+                  </li>
+                  <li className="ais-RefinementList-item">
+                    <label className="ais-RefinementList-label">
+                      <input className="ais-RefinementList-checkbox" type="checkbox" value="1003" onClick={handleStoreOnClick} />
+                      <span className="ais-RefinementList-labelText">1003</span>
+                    </label>
+                  </li>
+                </ul>
+              </Panel>
               <DynamicWidgets>
                 <Panel header="Categories">
                   <RefinementList
                     attribute='categories'
+                    showMore={true}
                   />
                 </Panel>
                 <Panel header="Brands">
-                  <RefinementList attribute="brand" />
+                  <RefinementList attribute="brand" showMore={true} />
                 </Panel>
               </DynamicWidgets>
+              <Panel header='Sizes'>
+                {/* <RefinementSize /> */}
+                <RefinementList attribute='sizes' transformItems={transformItems} />
+              </Panel>
+
             </div>
 
             <div className="search-panel__results">
