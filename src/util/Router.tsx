@@ -2,36 +2,7 @@ import { history } from 'instantsearch.js/es/lib/routers';
 const indexName = "max_bopis_test"
 
 export const routing = {
-    router: history({
-        parseURL({ qsModule, location }) {
-            let plpSlug = ""
-            let collectionHandle = ""
-            let context = ""
-            let filters = "";
-            if (location?.pathname.includes("plp")) {
-                plpSlug = location.pathname.split("/")[2]
-            }
-            if (location?.pathname.includes("collection")) {
-                collectionHandle = location.pathname.split("/")[2]
-            }
-
-            if (plpSlug) {
-                context = plpSlug;
-            } else if (collectionHandle) {
-                filters = `categories:${collectionHandle}`
-            }
-            const { query = '', page, brands = [] } = qsModule.parse(
-                location.search.slice(1)
-            );
-
-            return {
-                query: decodeURIComponent(query),
-                page,
-                context,
-                filters
-            }
-        },
-    }),
+    routing: history(),
     stateMapping: {
         stateToRoute(uiState) {
             // ...
@@ -41,12 +12,11 @@ export const routing = {
                 brand: indexUiState.refinementList?.brand,
                 page: indexUiState.page,
                 categories: indexUiState.refinementList?.categories,
-                size: indexUiState.size,
+                sizes: indexUiState.refinementList?.sizes,
             }
         },
         routeToState(routeState) {
-            ;
-            // ...
+            console.log(routeState)
             return {
                 [indexName]: {
                     query: routeState.q,
@@ -54,12 +24,12 @@ export const routing = {
                         ruleContexts: routeState.context,
                         filters: routeState.filters,
                     },
-                    RefinementList: {
+                    refinementList: {
                         brand: routeState.brand,
-                        categories: routeState.categories
+                        categories: routeState.categories,
+                        sizes: routeState.sizes,
                     },
                     page: routeState.page,
-                    size: routeState.size
                 }
             }
         },

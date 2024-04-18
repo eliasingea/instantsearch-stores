@@ -1,36 +1,54 @@
-import { useInstantSearch } from "react-instantsearch";
+import { useInstantSearch, useRefinementList } from "react-instantsearch";
 
-export function RefinementSize() {
-    const { results, indexUiState, setIndexUiState } = useInstantSearch();
-    let sizes = [];
-    let facets = results?._rawResults[0]?.facets;
-    if (!facets) return
-    for (let facet of Object.keys(facets)) {
-        if (facet.includes("stores.")) {
-            sizes.push(facet.split(".")[1])
+export function RefinementSize(props) {
+
+    const { results } = useInstantSearch();
+
+
+
+    let facets = results._rawResults[0].facets;
+
+    const {
+        items,
+        hasExhaustiveItems,
+        createURL,
+        refine,
+        sendEvent,
+        searchForItems,
+        isFromSearch,
+        canRefine,
+        canToggleShowMore,
+        isShowingMore,
+        toggleShowMore,
+    } = useRefinementList(props);
+
+    let itemsToShow = []
+    for (let item of items) {
+        if (`stores.${item.value}` in facets) {
+            for (let store of props.store) {
+                if (store in facets[`stores.${item.value}`]) {
+                    itemsToShow.push(item);
+                }
+            }
         }
     }
-    if (!sizes) return <></>
-    console.log(indexUiState)
-    return (
-        <ul className="ais-RefinementList-list" >
-            {sizes.map((size) => {
-                return (
-                    <li className="ais-RefinementList-item" key={size} onClick={
-                        () => {
-                            setIndexUiState((prevState) => ({
-                                ...prevState,
-                                size: size
-                            }));
-                        }
-                    }>
-                        <label className="ais-RefinementList-label">
-                            <input className="ais-RefinementList-checkbox" type="checkbox" value={size} />
-                            <span className="ais-RefinementList-labelText">{size}</span>
-                        </label>
-                    </li>
-                )
-            })}
+
+
+    return <>
+        <ul className="ais-RefinementList-list">
+            {itemsToShow.map((item) => (
+                <li className="ais-RefinementList-item" key={item.label}>
+                    <label className="ais-RefinementList-label">
+                        <input className="ais-RefinementList-checkbox"
+                            type="checkbox"
+                            checked={item.isRefined}
+                            onChange={() => refine(item.value)}
+                            value={item.value}
+                        />
+                        <span className="ais-RefinementList-labelText">{item.label}</span>
+                    </label>
+                </li>
+            ))}
         </ul>
-    )
+    </>;
 }

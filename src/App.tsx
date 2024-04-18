@@ -46,13 +46,12 @@ function createSearchClientProxy(searchClient, dynamicValue) {
     search(requests) {
       let request = requests[0]
       let filters = request.params.filters;
-      if (filters === "") {
+      if (!filters) {
         filters = filtersToSend.join(" OR ")
       } else {
         filters = filters + " AND " + filtersToSend.join(" OR ")
       }
       request.params.filters = filters;
-      console.log(requests)
       return searchClient.search(requests);
     }
   };
@@ -65,6 +64,7 @@ const indexName = "max_bopis_test"
 export function App() {
   const [sizes, setSizes] = useState([]);
 
+  const storesPerSize = {}
 
   let [store, setStore] = useState(['1795']);
 
@@ -156,8 +156,8 @@ export function App() {
                 </Panel>
               </DynamicWidgets>
               <Panel header='Sizes'>
-                {/* <RefinementSize /> */}
-                <RefinementList attribute='sizes' transformItems={transformItems} />
+                <RefinementSize attribute="sizes" store={store} sortBy={['name:asc']} />
+
               </Panel>
 
             </div>
