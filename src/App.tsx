@@ -25,7 +25,9 @@ import type { Hit } from 'instantsearch.js';
 
 import { routing } from './util/Router';
 
+
 import './App.css';
+import { createSearchClientProxy } from './util/CreateSearchClientProxy';
 
 const searchClient = algoliasearch(
   'SRD7V01PUE',
@@ -33,29 +35,6 @@ const searchClient = algoliasearch(
 );
 
 
-function createSearchClientProxy(searchClient, dynamicValue) {
-  let filtersToSend = [];
-
-  for (let value of dynamicValue) {
-    let singleFilter = `storeAggregate:${value}`
-    filtersToSend.push(singleFilter)
-  }
-
-  return {
-    ...searchClient,
-    search(requests) {
-      let request = requests[0]
-      let filters = request.params.filters;
-      if (!filters) {
-        filters = filtersToSend.join(" OR ")
-      } else {
-        filters = filters + " AND " + filtersToSend.join(" OR ")
-      }
-      request.params.filters = filters;
-      return searchClient.search(requests);
-    }
-  };
-}
 
 const future = { preserveSharedStateOnUnmount: true };
 
