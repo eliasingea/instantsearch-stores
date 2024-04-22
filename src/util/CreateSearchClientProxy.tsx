@@ -10,22 +10,21 @@ export function createSearchClientProxy(searchClient, dynamicValue) {
     return {
         ...searchClient,
         search(requests) {
-            console.log(requests);
             let request = requests[0]
             let filters = request?.params?.filters;
             let facets = request?.params?.facetFilters;
             let values = []
-            if (facets) {
-                for (let facet of facets) {
-                    if (facet.some(e => e.includes("size"))) {
+            // if (facets) {
+            //     for (let facet of facets) {
+            //         if (facet.some(e => e.includes("size"))) {
 
-                        for (let facetOptions of facet) {
-                            let value = facetOptions.split(":")[1]
-                            values.push(value);
-                        }
-                    }
-                }
-            }
+            //             for (let facetOptions of facet) {
+            //                 let value = facetOptions.split(":")[1]
+            //                 values.push(value);
+            //             }
+            //         }
+            //     }
+            // }
             if (!filters) {
                 filters = filtersToSend.join(" OR ")
             } else {

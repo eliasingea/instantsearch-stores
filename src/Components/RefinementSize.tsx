@@ -9,7 +9,7 @@ export function RefinementSize(props) {
 
 
     const [sizes, setSizes] = useState([]);
-
+    const [currItem, setItem] = useState("");
     const {
         items,
         hasExhaustiveItems,
@@ -38,6 +38,7 @@ export function RefinementSize(props) {
     let itemsToShow = [...itemsSet]
 
     useEffect(() => {
+        if (!sizes.length || !currItem) return;
         let filtersToSend = [];
         for (let size of sizes) {
             for (let store of props.store) {
@@ -46,12 +47,16 @@ export function RefinementSize(props) {
         }
         setIndexUiState((prevState) => ({
             ...prevState,
+            refinementList: {
+                ...prevState.refinementList,
+                sizes: [...sizes]
+            },
             configure: {
                 filters: filtersToSend.join(" OR ")
             }
         }));
 
-    }, [sizes])
+    }, [sizes, currItem])
 
 
     const handleSizeClick = (itemValue) => {
@@ -68,7 +73,7 @@ export function RefinementSize(props) {
             }
 
         });
-        refine(itemValue);
+        setItem(itemValue);
     }
 
     return (
