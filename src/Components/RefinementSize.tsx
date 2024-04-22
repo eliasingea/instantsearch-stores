@@ -9,19 +9,8 @@ export function RefinementSize(props) {
 
 
     const [sizes, setSizes] = useState([]);
-    const [currItem, setItem] = useState("");
     const {
         items,
-        hasExhaustiveItems,
-        createURL,
-        refine,
-        sendEvent,
-        searchForItems,
-        isFromSearch,
-        canRefine,
-        canToggleShowMore,
-        isShowingMore,
-        toggleShowMore,
     } = useRefinementList(props);
 
     let itemsSet = new Set()
@@ -38,13 +27,14 @@ export function RefinementSize(props) {
     let itemsToShow = [...itemsSet]
 
     useEffect(() => {
-        if (!sizes.length || !currItem) return;
+        if (!sizes.length) return;
         let filtersToSend = [];
         for (let size of sizes) {
             for (let store of props.store) {
                 filtersToSend.push(`stores.${size}:${store}`)
             }
         }
+        //instead of using the refine we can just set the state which will do the same thing without an extra call. 
         setIndexUiState((prevState) => ({
             ...prevState,
             refinementList: {
@@ -56,7 +46,7 @@ export function RefinementSize(props) {
             }
         }));
 
-    }, [sizes, currItem])
+    }, [sizes])
 
 
     const handleSizeClick = (itemValue) => {
@@ -73,7 +63,6 @@ export function RefinementSize(props) {
             }
 
         });
-        setItem(itemValue);
     }
 
     return (
