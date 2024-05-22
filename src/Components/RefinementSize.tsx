@@ -38,24 +38,25 @@ export function RefinementSize(props) {
         setIndexUiState((prevState) => ({
             ...prevState,
             refinementList: {
-                ...prevState.refinementList,
+                // ...prevState.refinementList,
                 sizes: [...sizes]
             },
             configure: {
-                filters: filtersToSend.join(" OR ")
+                filters: prevState.configure?.filters ? prevState.configure?.filters + " AND " : "" + "(" + filtersToSend.join(" OR ") + ")"
             }
         }));
 
     }, [sizes])
 
 
-    const handleSizeClick = (itemValue) => {
+    const handleSizeClick = (item) => {
+        let itemValue = item.value;
         setSizes(currentArray => {
             // Check if the value is already in the array
             const index = currentArray.indexOf(itemValue);
             if (index !== -1) {
                 // Value exists, remove it from the array
-
+                item.isRefined = false
                 return currentArray.filter(item => item !== itemValue);
             } else {
                 // Value does not exist, add it to the array
@@ -63,6 +64,7 @@ export function RefinementSize(props) {
             }
 
         });
+        console.log(sizes)
     }
 
     return (
@@ -74,7 +76,7 @@ export function RefinementSize(props) {
                             <input className="ais-RefinementList-checkbox"
                                 type="checkbox"
                                 checked={item.isRefined}
-                                onChange={() => handleSizeClick(item.value)}
+                                onChange={() => handleSizeClick(item)}
                                 value={item.value}
                             />
                             <span className="ais-RefinementList-labelText">{item.label}</span>

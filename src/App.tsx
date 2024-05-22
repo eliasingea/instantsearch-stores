@@ -27,7 +27,6 @@ import { routing } from './util/Router';
 
 
 import './App.css';
-import { createSearchClientProxy } from './util/CreateSearchClientProxy';
 
 const searchClient = algoliasearch(
   'SRD7V01PUE',
@@ -41,15 +40,20 @@ const future = { preserveSharedStateOnUnmount: true };
 const indexName = "max_bopis_test"
 
 export function App() {
-  const [sizes, setSizes] = useState([]);
-
-  const storesPerSize = {}
 
   let [store, setStore] = useState(['1795']);
+  let [storeFilter, setStoreFilter] = useState("");
 
-  const client = useMemo(() => {
-    return createSearchClientProxy(searchClient, store);
-  }, [store]);
+  useEffect(() => {
+    let filtersToSend = []
+    for (let s of store) {
+      let singleFilter = `storeAggregate:${s}`
+      filtersToSend.push(singleFilter)
+    }
+    setStoreFilter(filtersToSend.join(" OR "))
+  }, [store])
+
+
 
 
   function handleStoreOnClick(event) {
@@ -70,13 +74,6 @@ export function App() {
     }
   }
 
-  const transformItems = (items) => {
-    return items.map((item) => ({
-      ...item,
-      label: item.label.toUpperCase(),
-    }));
-  };
-
   return (
     <div>
       <header className="header">
@@ -92,8 +89,8 @@ export function App() {
       </header>
 
       <div className="container">
-        <InstantSearch searchClient={client} indexName="max_bopis_test" insights future={future} routing={routing}>
-          <Configure hitsPerPage={8} />
+        <InstantSearch searchClient={searchClient} indexName="max_bopis_test" insights future={future} routing={routing}>
+          <Configure hitsPerPage={8} filters={storeFilter} />
           <div className="search-panel">
             <div className="search-panel__filters">
               <Stats />
@@ -136,7 +133,6 @@ export function App() {
               </DynamicWidgets>
               <Panel header='Sizes'>
                 <RefinementSize attribute="sizes" store={store} sortBy={['name:asc']} />
-
               </Panel>
 
             </div>

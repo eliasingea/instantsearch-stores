@@ -49,6 +49,7 @@ export const routing = {
                 page: indexUiState.page,
                 categories: indexUiState.refinementList?.categories,
                 sizes: indexUiState.refinementList?.sizes,
+                filters: indexUiState.configure?.filters,
             }
         },
         routeToState(routeState) {
