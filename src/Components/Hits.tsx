@@ -2,7 +2,7 @@ import type { Hit } from 'instantsearch.js';
 import {
     Highlight,
 } from "react-instantsearch"
-
+import React from 'react';
 type HitProps = {
     hit: Hit;
 };
