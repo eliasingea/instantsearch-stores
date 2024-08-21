@@ -27,7 +27,19 @@ export function RefinementSize(props) {
     let itemsToShow = [...itemsSet]
 
     useEffect(() => {
-        if (!sizes.length) return;
+        if (!sizes.length) {
+            setIndexUiState((prevState) => ({
+                ...prevState,
+                refinementList: {
+                    ...prevState.refinementList,
+                    sizes: []
+                },
+                configure: {
+                    filters: prevState.configure?.filters
+                }
+            }));
+            return;
+        }
         let filtersToSend = [];
         for (let size of sizes) {
             for (let store of props.store) {
@@ -38,7 +50,7 @@ export function RefinementSize(props) {
         setIndexUiState((prevState) => ({
             ...prevState,
             refinementList: {
-                // ...prevState.refinementList,
+                ...prevState.refinementList,
                 sizes: [...sizes]
             },
             configure: {

@@ -89,7 +89,7 @@ export function App() {
       </header>
 
       <div className="container">
-        <InstantSearch searchClient={searchClient} indexName="max_bopis_test" insights future={future} routing={routing}>
+        <InstantSearch searchClient={searchClient} indexName="max_bopis_test" insights future={future} routing={true}>
           <Configure hitsPerPage={8} filters={storeFilter} />
           <div className="search-panel">
             <div className="search-panel__filters">
