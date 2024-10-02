@@ -3,6 +3,7 @@ import algoliasearch from 'algoliasearch/lite';
 import {
   Configure,
   DynamicWidgets,
+  useDynamicWidgets,
   RefinementList,
   Highlight,
   Hits,
@@ -44,7 +45,6 @@ export function App() {
 
   let [store, setStore] = useState(['1795']);
   let [storeFilter, setStoreFilter] = useState("");
-
   useEffect(() => {
     let filtersToSend = []
     for (let s of store) {
@@ -53,7 +53,6 @@ export function App() {
     }
     setStoreFilter(filtersToSend.join(" OR "))
   }, [store])
-
 
 
 
@@ -75,6 +74,42 @@ export function App() {
     }
   }
 
+  const objectToUrlString = (params: any) => {
+    if (typeof params === "object") {
+      let returnStrings = []
+      for (let key of Object.keys(params)) {
+        if (!params[key]) continue;
+        if (typeof params[key] === "string" || typeof params[key] === "number") {
+          returnStrings.push(`${key}=${params[key]}`)
+        } else {
+          for (let value of params[key]) {
+            returnStrings.push(`${key}=${value}`);
+          }
+        }
+      }
+      if (returnStrings.length > 1) {
+        return returnStrings.join("+")
+      } else {
+        return returnStrings[0]
+      }
+    }
+  };
+
+  const urlStringToObject = (urlString: string) => {
+    const params = {} as Record<string, string[]>;
+
+    urlString.split("+").forEach((filter) => {
+      const [key, value] = filter.split("=");
+
+      if (key && value) {
+        params[key] = params[key] || [];
+        params[key]!.push(decodeURIComponent(value));
+      }
+    });
+
+    return params;
+  };
+
   return (
     <div>
       <header className="header">
@@ -90,76 +125,59 @@ export function App() {
       </header>
 
       <div className="container">
-        <InstantSearch searchClient={searchClient} indexName="max_bopis_test" insights future={future} routing={
+        <InstantSearch searchClient={searchClient} indexName="max_bopis_test" insights={false} future={future} routing={
           {
             router: history({
-              parseURL({ qsModule, location }) {
-                let plpSlug = ""
-                let collectionHandle = ""
-                let context = ""
-                let filters = "";
-                if (location?.pathname.includes("plp")) {
-                  plpSlug = location.pathname.split("/")[2]
-                }
-                if (location?.pathname.includes("collection")) {
-                  collectionHandle = location.pathname.split("/")[2]
-                }
+              parseURL({ location }) {
+                console.log("hey")
+                const urlString = location.pathname.split("/").pop();
+                const refinements = urlString ? urlStringToObject(urlString) : {};
 
-                if (plpSlug) {
-                  context = plpSlug;
-                } else if (collectionHandle) {
-                  filters = `categories:${collectionHandle}`
-                }
-                const { query = '', page, brand = [] } = qsModule.parse(
-                  location.search.slice(1)
-                );
-
-                const allBrands = Array.isArray(brand)
-                  ? brand
-                  : [brand].filter(Boolean);
-
-
-                return {
-                  query: decodeURIComponent(query),
-                  page,
-                  context,
-                  filters,
-                  brand: allBrands.map(decodeURIComponent),
-                }
+                return refinements;
               },
+              createURL({ routeState, location }) {
+                const urlString = objectToUrlString(routeState);
+                const pathname = `/`;
 
+                return `${location.origin}${pathname}${urlString ? `${urlString}` : ""}`;
+              },
+              cleanUrlOnDispose: true
             }),
             stateMapping: {
               stateToRoute(uiState) {
-                // ...
                 const indexUiState = uiState[indexName];
-                return {
-                  q: indexUiState.query,
-                  brand: indexUiState.refinementList?.brand,
-                  page: indexUiState.page,
-                  categories: indexUiState.refinementList?.categories,
-                  sizes: indexUiState.refinementList?.sizes,
-                  filters: indexUiState.configure?.filters,
-                }
-              },
-              routeToState(routeState) {
-                console.log(routeState)
-                return {
-                  [indexName]: {
-                    query: routeState.q,
-                    configure: {
-                      ruleContexts: routeState.context,
-                      filters: routeState.filters,
-                    },
-                    RefinementList: {
-                      brand: routeState.brand,
-                      categories: routeState.categories,
-                      sizes: routeState.sizes
+                const routeState = {};
 
-                    },
-                    page: routeState.page,
+                Object.keys(indexUiState).forEach(key => {
+                  if (key === "configure") return;
+                  if (key === 'refinementList') {
+                    Object.keys(indexUiState.refinementList).forEach(refinementKey => {
+                      routeState[refinementKey] = indexUiState.refinementList[refinementKey];
+                    });
+                  } else {
+                    routeState[key] = indexUiState[key];
                   }
-                }
+                });
+
+                return routeState;
+              },
+
+              routeToState(routeState) {
+                console.log(routeState);
+                const uiState = {
+                  [indexName]: {
+                    refinementList: {}
+                  }
+                };
+                Object.keys(routeState).forEach(key => {
+                  if (['brand', 'categories', 'sizes'].includes(key)) {
+                    uiState[indexName].refinementList[key] = routeState[key];
+                  } else {
+                    uiState[indexName][key] = routeState[key];
+                  }
+                });
+
+                return uiState;
               },
             },
           }
