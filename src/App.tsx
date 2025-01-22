@@ -109,7 +109,13 @@ export function App() {
 
     return params;
   };
+  const [refinedSizes, setRefinedSizes] = useState([]);
 
+  const handleSizeRefine = (size, isChecked) => {
+    setRefinedSizes(prev =>
+      isChecked ? [...prev, size] : prev.filter(refinedSize => refinedSize !== size)
+    );
+  };
   return (
     <div>
       <header className="header">
