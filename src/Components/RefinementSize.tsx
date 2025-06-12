@@ -25,9 +25,7 @@ export function RefinementSize(props) {
   let itemsToShow = [...itemsSet];
 
   useEffect(() => {
-    // Don't do anything if facets are not ready (avoid running on mount)
-    if (!results || !results._rawResults?.[0]?.facets) return;
-  
+   
     // Avoid setting state if sizes and props.store are empty
     if (!sizes.length) {
       setIndexUiState(prev => {
@@ -67,7 +65,7 @@ export function RefinementSize(props) {
     });
   
     updateFilters(filtersToSend);
-  }, [sizes, props.store, results]);
+  }, [sizes, props.store]);
   
 
   const handleSizeClick = (refine, item) => {

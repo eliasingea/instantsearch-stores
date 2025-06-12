@@ -26,10 +26,8 @@ import React from 'react';
 
 const searchClient = algoliasearch(
   'SRD7V01PUE',
-  '21d2cd80869e20eb0becf4065f058b95'
+  '2719225621c11aaeca37f98899657b14'
 );
-
-
 
 const future = { preserveSharedStateOnUnmount: true };
 
@@ -43,7 +41,7 @@ export function SearchWrapper({ store, onStoreClick }) {
       <InstantSearch
         searchClient={searchClient}
         indexName="max_bopis_test"
-        insights={false}
+        insights={true}
         future={future}
         routing={true}
       >

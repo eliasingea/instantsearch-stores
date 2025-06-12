@@ -24,6 +24,8 @@ export function Hit({ hit }: HitProps) {
           <p>
             {hit.sizes}
           </p>
+          <button>View Product</button>
+
         </div>
       </article>
     );
